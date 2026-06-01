@@ -4,19 +4,22 @@ import api from "../services/api";
 function LeadList() {
 
     const [leads, setLeads] = useState([]);
+    const [search, setSearch] = useState("");
 
     useEffect(() => {
 
         fetchLeads();
 
-    }, []);
+    }, [search]);
 
     const fetchLeads = async () => {
 
         try {
 
             const response =
-                await api.get("/leads");
+                await api.get(
+                    `/leads?search=${search}`
+                );
 
             setLeads(response.data);
 
@@ -67,7 +70,11 @@ function LeadList() {
             <input
                 type="text"
                 className="form-control mb-3"
-                placeholder="Search Leads"
+                placeholder="Search by name or email"
+                value={search}
+                onChange={(e) =>
+                    setSearch(e.target.value)
+                }
             />
 
             <table className="table table-bordered">
@@ -104,6 +111,10 @@ function LeadList() {
                                 <td>
                                     <button
                                         className="btn btn-warning btn-sm me-2"
+                                        onClick={() =>
+                                            window.location.href =
+                                            `/edit-lead/${lead.id}`
+                                        }
                                     >
                                         Edit
                                     </button>

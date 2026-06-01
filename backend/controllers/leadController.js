@@ -1,5 +1,6 @@
 const pool = require("../config/db");
 const assignmentService = require("../services/assignmentService");
+const axios = require("axios");
 
 /*
 CREATE LEAD
@@ -15,6 +16,19 @@ exports.createLead = async (req, res) => {
             status,
             notes
         } = req.body;
+
+        const response = await axios.get(
+            "https://randomuser.me/api/"
+        );
+
+        const randomUser =
+            response.data.results[0];
+
+        console.log(
+            "Random User:",
+            randomUser.name.first,
+            randomUser.email
+        );
 
         const assignedAgent =
             await assignmentService.getLeastLoadedAgent();
@@ -70,7 +84,19 @@ exports.createLead = async (req, res) => {
 
         res.status(201).json({
             message: "Lead Created",
-            lead
+            lead,
+            enrichment: {
+                contactName:
+                    randomUser.name.first +
+                    " " +
+                    randomUser.name.last,
+
+                contactEmail:
+                    randomUser.email,
+
+                country:
+                    randomUser.location.country
+            }
         });
 
     } catch (error) {
@@ -330,6 +356,48 @@ exports.deleteLead = async (req, res) => {
 
         res.json({
             message: "Lead Deleted"
+        });
+
+    } catch (error) {
+
+        console.error(error);
+
+        res.status(500).json({
+            message: error.message
+        });
+
+    }
+
+};
+
+/*
+GET STATS
+*/
+exports.getStats = async (req, res) => {
+
+    try {
+
+        const totalResult = await pool.query(
+            "SELECT COUNT(*) FROM leads"
+        );
+
+        const newResult = await pool.query(
+            "SELECT COUNT(*) FROM leads WHERE status='NEW'"
+        );
+
+        const contactedResult = await pool.query(
+            "SELECT COUNT(*) FROM leads WHERE status='CONTACTED'"
+        );
+
+        const closedResult = await pool.query(
+            "SELECT COUNT(*) FROM leads WHERE status='CLOSED'"
+        );
+
+        res.json({
+            total: parseInt(totalResult.rows[0].count),
+            new: parseInt(newResult.rows[0].count),
+            contacted: parseInt(contactedResult.rows[0].count),
+            closed: parseInt(closedResult.rows[0].count)
         });
 
     } catch (error) {

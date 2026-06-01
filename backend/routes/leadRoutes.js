@@ -23,6 +23,12 @@ router.get(
 );
 
 router.get(
+    "/stats",
+    authMiddleware,
+    leadController.getStats
+);
+
+router.get(
     "/:id",
     authMiddleware,
     leadController.getLeadById
