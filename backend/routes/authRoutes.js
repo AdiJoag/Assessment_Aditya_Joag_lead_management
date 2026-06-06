@@ -12,6 +12,19 @@ router.get("/test", (req, res) => {
 router.post("/register", authController.register);
 router.post("/login", authController.login);
 
+router.get(
+    "/agents",
+    authMiddleware,
+    authController.getAgents
+);
+
+router.put(
+    "/agents/:id",
+    authMiddleware,
+    roleMiddleware("ADMIN", "MANAGER"),
+    authController.updateAgent
+);
+
 router.get("/profile", authMiddleware, (req, res) => {
 
     res.json({

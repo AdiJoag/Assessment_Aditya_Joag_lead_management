@@ -13,29 +13,51 @@ function EditLead() {
         phone: "",
         source: "",
         status: "",
-        notes: ""
+        notes: "",
+        assigned_to: ""
     });
 
+    const [agents, setAgents] = useState([]);
+
     useEffect(() => {
-        fetchLead();
+        let ignore = false;
+
+        api.get(`/leads/${id}`)
+            .then((response) => {
+                if (!ignore) {
+                    setFormData({
+                        ...response.data,
+                        assigned_to:
+                            response.data.assigned_to || ""
+                    });
+                }
+            })
+            .catch((error) => {
+                console.error(error);
+            });
+
+        return () => {
+            ignore = true;
+        };
+    }, [id]);
+
+    useEffect(() => {
+        let ignore = false;
+
+        api.get("/auth/agents")
+            .then((response) => {
+                if (!ignore) {
+                    setAgents(response.data);
+                }
+            })
+            .catch((error) => {
+                console.error(error);
+            });
+
+        return () => {
+            ignore = true;
+        };
     }, []);
-
-    const fetchLead = async () => {
-
-        try {
-
-            const response =
-                await api.get(`/leads/${id}`);
-
-            setFormData(response.data);
-
-        } catch (error) {
-
-            console.error(error);
-
-        }
-
-    };
 
     const handleChange = (e) => {
 
@@ -73,11 +95,31 @@ function EditLead() {
 
     return (
 
-        <div className="container mt-4">
+        <div className="container app-container">
 
-            <h2>Edit Lead</h2>
+            <div className="page-header">
+                <div>
+                    <p className="page-kicker">
+                        Lead details
+                    </p>
+                    <h1 className="page-title">
+                        Edit Lead
+                    </h1>
+                    <p className="page-subtitle">
+                        Update contact, status, and assignment information.
+                    </p>
+                </div>
+            </div>
 
-            <form onSubmit={handleSubmit}>
+            <form
+                className="form-panel"
+                onSubmit={handleSubmit}
+            >
+                <div className="form-grid">
+                    <div>
+                        <label className="form-label">
+                            Name
+                        </label>
 
                 <input
                     name="name"
@@ -85,6 +127,12 @@ function EditLead() {
                     value={formData.name}
                     onChange={handleChange}
                 />
+                    </div>
+
+                    <div>
+                        <label className="form-label">
+                            Email
+                        </label>
 
                 <input
                     name="email"
@@ -92,6 +140,12 @@ function EditLead() {
                     value={formData.email}
                     onChange={handleChange}
                 />
+                    </div>
+
+                    <div>
+                        <label className="form-label">
+                            Phone
+                        </label>
 
                 <input
                     name="phone"
@@ -99,6 +153,12 @@ function EditLead() {
                     value={formData.phone}
                     onChange={handleChange}
                 />
+                    </div>
+
+                    <div>
+                        <label className="form-label">
+                            Source
+                        </label>
 
                 <input
                     name="source"
@@ -106,6 +166,12 @@ function EditLead() {
                     value={formData.source}
                     onChange={handleChange}
                 />
+                    </div>
+
+                    <div>
+                        <label className="form-label">
+                            Status
+                        </label>
 
                 <input
                     name="status"
@@ -113,19 +179,55 @@ function EditLead() {
                     value={formData.status}
                     onChange={handleChange}
                 />
+                    </div>
 
+                    <div>
+                        <label className="form-label">
+                            Agent
+                        </label>
+
+                <select
+                    name="assigned_to"
+                    className="form-select mb-3"
+                    value={formData.assigned_to}
+                    onChange={handleChange}
+                >
+                    <option value="">
+                        Unassigned
+                    </option>
+                    {
+                        agents.map((agent) => (
+                            <option
+                                key={agent.id}
+                                value={agent.id}
+                            >
+                                {agent.name}
+                            </option>
+                        ))
+                    }
+                </select>
+                    </div>
+
+                    <div className="full-width">
+                        <label className="form-label">
+                            Notes
+                        </label>
                 <textarea
                     name="notes"
                     className="form-control mb-3"
                     value={formData.notes}
                     onChange={handleChange}
                 />
+                    </div>
 
-                <button
-                    className="btn btn-primary"
-                >
-                    Update Lead
-                </button>
+                    <div className="full-width">
+                        <button
+                            className="btn btn-primary"
+                        >
+                            Update Lead
+                        </button>
+                    </div>
+                </div>
 
             </form>
 

@@ -1,10 +1,22 @@
-import { useState } from "react";
-import api from "../services/api";
+import {
+    useContext,
+    useState
+} from "react";
+import {
+    Link,
+    useLocation,
+    useNavigate
+} from "react-router-dom";
+import { AuthContext } from "../context/AuthContextValue";
 
 function Login() {
 
+    const { login } = useContext(AuthContext);
+    const navigate = useNavigate();
+    const location = useLocation();
+
     const [email, setEmail] =
-        useState("");
+        useState(location.state?.email || "");
 
     const [password, setPassword] =
         useState("");
@@ -15,23 +27,11 @@ function Login() {
 
         try {
 
-            const response =
-                await api.post(
-                    "/auth/login",
-                    {
-                        email,
-                        password
-                    }
-                );
+            await login(email, password);
 
-            localStorage.setItem(
-                "token",
-                response.data.token
-            );
+            navigate("/dashboard");
 
-            window.location.href = "/dashboard";
-
-        } catch (error) {
+        } catch {
 
             alert("Login Failed");
 
@@ -40,15 +40,19 @@ function Login() {
     };
 
     return (
-        <div className="container mt-5">
+        <div className="auth-page">
 
-            <div className="row justify-content-center">
+                    <div className="auth-card">
 
-                <div className="col-md-4">
-
-                    <div className="card p-4">
-
-                        <h3>Login</h3>
+                        <p className="page-kicker">
+                            Lead Management
+                        </p>
+                        <h1 className="auth-title">
+                            Welcome back
+                        </h1>
+                        <p className="auth-copy">
+                            Sign in to manage leads, agents, and assignments.
+                        </p>
 
                         <form
                             onSubmit={handleLogin}
@@ -57,6 +61,7 @@ function Login() {
                             <input
                                 className="form-control mb-3"
                                 placeholder="Email"
+                                type="email"
                                 value={email}
                                 onChange={(e) =>
                                     setEmail(
@@ -85,11 +90,13 @@ function Login() {
 
                         </form>
 
+                        <div className="text-center mt-3">
+                            <Link to="/register">
+                                Create another user
+                            </Link>
+                        </div>
+
                     </div>
-
-                </div>
-
-            </div>
 
         </div>
     );

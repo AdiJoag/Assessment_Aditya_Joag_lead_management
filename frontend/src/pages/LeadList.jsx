@@ -7,9 +7,21 @@ function LeadList() {
     const [search, setSearch] = useState("");
 
     useEffect(() => {
+        let ignore = false;
 
-        fetchLeads();
+        api.get(`/leads?search=${search}`)
+            .then((response) => {
+                if (!ignore) {
+                    setLeads(response.data);
+                }
+            })
+            .catch((error) => {
+                console.error(error);
+            });
 
+        return () => {
+            ignore = true;
+        };
     }, [search]);
 
     const fetchLeads = async () => {
@@ -46,7 +58,7 @@ function LeadList() {
 
             fetchLeads();
 
-        } catch (error) {
+        } catch {
 
             alert("Delete Failed");
 
@@ -56,30 +68,46 @@ function LeadList() {
 
     return (
 
-        <div className="container mt-4">
+        <div className="container app-container">
 
-            <h2>Lead List</h2>
+            <div className="page-header">
+                <div>
+                    <p className="page-kicker">
+                        Pipeline
+                    </p>
+                    <h1 className="page-title">
+                        Leads
+                    </h1>
+                    <p className="page-subtitle">
+                        Search, edit, and assign leads to the right agent.
+                    </p>
+                </div>
 
-            <a
-                href="/create-lead"
-                className="btn btn-success mb-3"
-            >
-                Add Lead
-            </a>
+                <a
+                    href="/create-lead"
+                    className="btn btn-success"
+                >
+                    Add Lead
+                </a>
+            </div>
 
-            <input
-                type="text"
-                className="form-control mb-3"
-                placeholder="Search by name or email"
-                value={search}
-                onChange={(e) =>
-                    setSearch(e.target.value)
-                }
-            />
+            <div className="content-panel">
+                <div className="panel-toolbar">
+                    <input
+                        type="text"
+                        className="form-control"
+                        placeholder="Search by name or email"
+                        value={search}
+                        onChange={(e) =>
+                            setSearch(e.target.value)
+                        }
+                    />
+                </div>
 
-            <table className="table table-bordered">
+                <div className="table-responsive">
+                    <table className="table table-hover align-middle">
 
-                <thead>
+                        <thead>
 
                     <tr>
                         <th>ID</th>
@@ -92,12 +120,13 @@ function LeadList() {
                         <th>Actions</th>
                     </tr>
 
-                </thead>
+                        </thead>
 
-                <tbody>
+                        <tbody>
 
                     {
-                        leads.map((lead) => (
+                        leads.length > 0 ? (
+                            leads.map((lead) => (
 
                             <tr key={lead.id}>
 
@@ -105,7 +134,11 @@ function LeadList() {
                                 <td>{lead.name}</td>
                                 <td>{lead.email}</td>
                                 <td>{lead.phone}</td>
-                                <td>{lead.status}</td>
+                                <td>
+                                    <span className={`status-pill ${lead.status}`}>
+                                        {lead.status}
+                                    </span>
+                                </td>
                                 <td>{lead.source}</td>
                                 <td>{lead.agent_name}</td>
                                 <td>
@@ -131,12 +164,24 @@ function LeadList() {
 
                             </tr>
 
-                        ))
+                            ))
+                        ) : (
+                            <tr>
+                                <td
+                                    colSpan="8"
+                                    className="empty-state"
+                                >
+                                    No leads found
+                                </td>
+                            </tr>
+                        )
                     }
 
-                </tbody>
+                        </tbody>
 
-            </table>
+                    </table>
+                </div>
+            </div>
 
         </div>
 

@@ -14,24 +14,61 @@ exports.createLead = async (req, res) => {
             phone,
             source,
             status,
-            notes
+            notes,
+            assigned_to
         } = req.body;
 
-        const response = await axios.get(
-            "https://randomuser.me/api/"
-        );
+        let enrichment = null;
 
-        const randomUser =
-            response.data.results[0];
+        try {
+            const response = await axios.get(
+                "https://randomuser.me/api/",
+                {
+                    timeout: 5000
+                }
+            );
 
-        console.log(
-            "Random User:",
-            randomUser.name.first,
-            randomUser.email
-        );
+            const randomUser =
+                response.data.results[0];
 
-        const assignedAgent =
-            await assignmentService.getLeastLoadedAgent();
+            enrichment = {
+                contactName:
+                    randomUser.name.first +
+                    " " +
+                    randomUser.name.last,
+
+                contactEmail:
+                    randomUser.email,
+
+                country:
+                    randomUser.location.country
+            };
+        } catch (error) {
+            console.error(
+                "Lead enrichment failed:",
+                error.message
+            );
+        }
+
+        let assignedAgent = assigned_to;
+
+        if (assignedAgent) {
+            const agentResult = await pool.query(
+                `SELECT id
+                 FROM users
+                 WHERE id=$1 AND role='AGENT'`,
+                [assignedAgent]
+            );
+
+            if (agentResult.rows.length === 0) {
+                return res.status(400).json({
+                    message: "Selected agent is invalid"
+                });
+            }
+        } else {
+            assignedAgent =
+                await assignmentService.getLeastLoadedAgent();
+        }
 
         const leadResult = await pool.query(
             `INSERT INTO leads
@@ -85,18 +122,7 @@ exports.createLead = async (req, res) => {
         res.status(201).json({
             message: "Lead Created",
             lead,
-            enrichment: {
-                contactName:
-                    randomUser.name.first +
-                    " " +
-                    randomUser.name.last,
-
-                contactEmail:
-                    randomUser.email,
-
-                country:
-                    randomUser.location.country
-            }
+            enrichment
         });
 
     } catch (error) {
@@ -259,8 +285,24 @@ exports.updateLead = async (req, res) => {
             phone,
             source,
             status,
-            notes
+            notes,
+            assigned_to
         } = req.body;
+
+        if (assigned_to) {
+            const agentResult = await pool.query(
+                `SELECT id
+                 FROM users
+                 WHERE id=$1 AND role='AGENT'`,
+                [assigned_to]
+            );
+
+            if (agentResult.rows.length === 0) {
+                return res.status(400).json({
+                    message: "Selected agent is invalid"
+                });
+            }
+        }
 
         const result = await pool.query(
             `
@@ -271,8 +313,9 @@ exports.updateLead = async (req, res) => {
                 phone=$3,
                 source=$4,
                 status=$5,
-                notes=$6
-            WHERE id=$7
+                notes=$6,
+                assigned_to=$7
+            WHERE id=$8
             RETURNING *
             `,
             [
@@ -282,6 +325,7 @@ exports.updateLead = async (req, res) => {
                 source,
                 status,
                 notes,
+                assigned_to || null,
                 req.params.id
             ]
         );
